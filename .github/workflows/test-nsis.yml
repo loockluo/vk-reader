@@ -1,14 +1,12 @@
-name: 构建 NSIS 安装包
+name: 测试 NSIS 安装和打包
 
 on:
-  push:
-    branches: [ main ]
-  release:
-    types: [ published ]
   workflow_dispatch:
+  push:
+    branches: [ test-nsis ]
 
 jobs:
-  build-installer:
+  test-nsis:
     runs-on: windows-latest
     
     steps:
@@ -48,18 +46,19 @@ jobs:
     - name: 构建安装脚本
       run: pnpm run build:install
       
-    - name: 创建 zuiSuReader 目录
+    - name: 创建测试目录
       run: |
-        New-Item -ItemType Directory -Force -Path "zuiSuReader"
-        Copy-Item -Recurse -Force "public" "zuiSuReader/"
-        Copy-Item -Recurse -Force "node-v14.9.0-win-x86" "zuiSuReader/"
-        Copy-Item "index.js" "zuiSuReader/"
-        Copy-Item "config.json" "zuiSuReader/"
-        Copy-Item "install.js" "zuiSuReader/"
-        Copy-Item "install.bat" "zuiSuReader/"
-        Copy-Item "installService.bat" "zuiSuReader/"
-        Copy-Item "uninstall.bat" "zuiSuReader/"
-        Copy-Item "手动安装说明.txt" "zuiSuReader/"
+        New-Item -ItemType Directory -Force -Path "test-build"
+        Copy-Item -Recurse -Force "public" "test-build/"
+        Copy-Item -Recurse -Force "node-v14.9.0-win-x86" "test-build/"
+        Copy-Item "index.js" "test-build/"
+        Copy-Item "config.json" "test-build/"
+        Copy-Item "install.js" "test-build/"
+        Copy-Item "install.bat" "test-build/"
+        Copy-Item "installService.bat" "test-build/"
+        Copy-Item "uninstall.bat" "test-build/"
+        Copy-Item "手动安装说明.txt" "test-build/"
+        Copy-Item "VK-reader-build.nsi" "test-build/"
         
     - name: 复制 NSIS 安装包
       run: |
@@ -99,33 +98,56 @@ jobs:
           exit 1
         }
         
-    - name: 构建 NSIS 安装包
+    - name: 测试 NSIS 编译
       run: |
-        makensis VK-reader-build.nsi
+        Write-Host "开始测试 NSIS 编译..."
+        Set-Location "test-build"
         
-    - name: 验证安装包
-      run: |
-        if (Test-Path "Setup.exe") {
-          Write-Host "安装包构建成功: Setup.exe"
-          $fileInfo = Get-Item "Setup.exe"
-          Write-Host "文件大小: $($fileInfo.Length) bytes"
+        # 检查 NSIS 脚本是否存在
+        if (Test-Path "VK-reader-build.nsi") {
+          Write-Host "找到 NSIS 脚本文件"
         } else {
-          Write-Error "安装包构建失败"
+          Write-Error "NSIS 脚本文件不存在"
           exit 1
         }
         
-    - name: 上传安装包
+        # 尝试编译 NSIS 脚本
+        try {
+          Write-Host "正在编译 NSIS 脚本..."
+          & "C:\Program Files (x86)\NSIS\makensis.exe" "VK-reader-build.nsi"
+          Write-Host "NSIS 编译成功"
+        } catch {
+          Write-Error "NSIS 编译失败: $_"
+          exit 1
+        }
+        
+        # 检查生成的安装包
+        if (Test-Path "Setup.exe") {
+          $setupInfo = Get-Item "Setup.exe"
+          Write-Host "安装包生成成功: Setup.exe"
+          Write-Host "安装包大小: $($setupInfo.Length) bytes"
+          Write-Host "安装包大小 (MB): $([math]::Round($setupInfo.Length / 1MB, 2)) MB"
+        } else {
+          Write-Error "安装包生成失败，未找到 Setup.exe"
+          exit 1
+        }
+        
+    - name: 上传测试构建产物
       uses: actions/upload-artifact@v4
       with:
-        name: VK-Reader-Installer-${{ github.sha }}
-        path: Setup.exe
-        retention-days: 30
+        name: NSIS-Test-Build-${{ github.sha }}
+        path: |
+          test-build/Setup.exe
+          test-build/
+        retention-days: 7
         
-    - name: 创建 Release
-      if: github.event_name == 'release'
-      uses: softprops/action-gh-release@v1
-      with:
-        files: Setup.exe
-        draft: false
-        prerelease: false
-        generate_release_notes: true
+    - name: 测试完成报告
+      run: |
+        Write-Host "=========================================="
+        Write-Host "NSIS 测试完成报告"
+        Write-Host "=========================================="
+        Write-Host "✅ NSIS 下载成功"
+        Write-Host "✅ NSIS 安装成功"
+        Write-Host "✅ NSIS 编译成功"
+        Write-Host "✅ 安装包生成成功"
+        Write-Host "=========================================="
