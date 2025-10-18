@@ -66,22 +66,85 @@ jobs:
         $url = "https://sourceforge.net/projects/nsis/files/NSIS%203/3.08/nsis-3.08-setup.exe/download"
         $output = "nsis-3.08-setup.exe"
         Write-Host "正在下载 NSIS..."
+        Write-Host "下载链接: $url"
+        
+        # 尝试多种下载方法
+        $success = $false
+        
+        # 方法1: 使用 Invoke-WebRequest
         try {
-          Invoke-WebRequest -Uri $url -OutFile $output -UseBasicParsing
-          Write-Host "下载完成"
+          Write-Host "尝试方法1: Invoke-WebRequest"
+          Invoke-WebRequest -Uri $url -OutFile $output -UseBasicParsing -TimeoutSec 300
+          $success = $true
+          Write-Host "方法1成功"
         } catch {
-          Write-Error "下载失败: $_"
+          Write-Host "方法1失败: $_"
+        }
+        
+        # 方法2: 使用 curl
+        if (-not $success) {
+          try {
+            Write-Host "尝试方法2: curl"
+            curl -L -o $output $url
+            $success = $true
+            Write-Host "方法2成功"
+          } catch {
+            Write-Host "方法2失败: $_"
+          }
+        }
+        
+        # 方法3: 使用 wget
+        if (-not $success) {
+          try {
+            Write-Host "尝试方法3: wget"
+            wget -O $output $url
+            $success = $true
+            Write-Host "方法3成功"
+          } catch {
+            Write-Host "方法3失败: $_"
+          }
+        }
+        
+        if (-not $success) {
+          Write-Error "所有下载方法都失败了"
           exit 1
         }
+        
+        Write-Host "下载完成"
         
     - name: 验证下载文件
       run: |
         if (Test-Path "nsis-3.08-setup.exe") {
           $fileInfo = Get-Item "nsis-3.08-setup.exe"
           Write-Host "文件大小: $($fileInfo.Length) bytes"
-          if ($fileInfo.Length -lt 1000000) {
-            Write-Error "下载的文件太小，可能损坏"
-            exit 1
+          Write-Host "文件大小 (MB): $([math]::Round($fileInfo.Length / 1MB, 2)) MB"
+          
+          # NSIS 3.08 安装包应该大于 2MB
+          if ($fileInfo.Length -lt 2000000) {
+            Write-Error "下载的文件太小 ($($fileInfo.Length) bytes)，可能损坏或下载失败"
+            Write-Host "尝试重新下载..."
+            
+            # 删除损坏的文件
+            Remove-Item "nsis-3.08-setup.exe" -Force
+            
+            # 尝试备用下载链接
+            $backupUrl = "https://github.com/NSIS-Dev/NSIS/releases/download/v3.08/nsis-3.08-setup.exe"
+            Write-Host "尝试备用下载链接: $backupUrl"
+            try {
+              Invoke-WebRequest -Uri $backupUrl -OutFile "nsis-3.08-setup.exe" -UseBasicParsing -TimeoutSec 300
+              $newFileInfo = Get-Item "nsis-3.08-setup.exe"
+              Write-Host "备用下载完成，新文件大小: $($newFileInfo.Length) bytes"
+              
+              if ($newFileInfo.Length -lt 2000000) {
+                Write-Error "备用下载也失败了"
+                exit 1
+              }
+            } catch {
+              Write-Error "备用下载失败: $_"
+              exit 1
+            }
+          } else {
+            Write-Host "文件大小验证通过"
           }
         } else {
           Write-Error "下载文件不存在"
