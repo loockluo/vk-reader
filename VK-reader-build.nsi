@@ -79,6 +79,10 @@ SectionEnd
  ******************************/
 
 Section Uninstall
+  ; 先执行服务卸载
+  ExecWait '"$INSTDIR\node-v14.9.0-win-x86\node.exe" "$INSTDIR\install.js" uninstall'
+
+  ; 然后删除文件和文件夹
   Delete "$INSTDIR\${PRODUCT_NAME}.url"
   Delete "$INSTDIR\uninst.exe"
 
@@ -90,8 +94,6 @@ Section Uninstall
   RMDir /r "$INSTDIR\"
 
   RMDir "$INSTDIR"
-  
-  ExecWait '"$INSTDIR\uninstall.bat"'
 
   DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
   SetAutoClose true
