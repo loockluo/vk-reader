@@ -101,7 +101,12 @@ jobs:
         
     - name: 构建 NSIS 安装包
       run: |
-        makensis VK-reader-build.nsi
+        # 确保 NSIS 路径在 PATH 中
+        $env:PATH += ";C:\Program Files (x86)\NSIS"
+        Write-Host "当前 PATH: $env:PATH"
+        
+        # 使用完整路径调用 makensis
+        & "C:\Program Files (x86)\NSIS\makensis.exe" VK-reader-build.nsi
         
     - name: 验证安装包
       run: |
