@@ -52,7 +52,8 @@ jobs:
       run: |
         New-Item -ItemType Directory -Force -Path "zuiSuReader"
         Copy-Item -Recurse -Force "public" "zuiSuReader/"
-        Copy-Item -Recurse -Force "node-v14.9.0-win-x86" "zuiSuReader/"
+        # 从 zip 文件解压 node-v14.9.0-win-x86
+        Expand-Archive -Path "scripts/node-v14.9.0-win-x86.zip" -DestinationPath "zuiSuReader/" -Force
         Copy-Item "index.js" "zuiSuReader/"
         Copy-Item "config.json" "zuiSuReader/"
         Copy-Item "install.js" "zuiSuReader/"
