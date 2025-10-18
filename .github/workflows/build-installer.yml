@@ -63,15 +63,56 @@ jobs:
         
     - name: 下载 NSIS
       run: |
-        Invoke-WebRequest -Uri "https://sourceforge.net/projects/nsis/files/NSIS%203/3.08/nsis-3.08-setup.exe/download" -OutFile "nsis-3.08-setup.exe"
+        $url = "https://sourceforge.net/projects/nsis/files/NSIS%203/3.08/nsis-3.08-setup.exe/download"
+        $output = "nsis-3.08-setup.exe"
+        Write-Host "正在下载 NSIS..."
+        try {
+          Invoke-WebRequest -Uri $url -OutFile $output -UseBasicParsing
+          Write-Host "下载完成"
+        } catch {
+          Write-Error "下载失败: $_"
+          exit 1
+        }
+        
+    - name: 验证下载文件
+      run: |
+        if (Test-Path "nsis-3.08-setup.exe") {
+          $fileInfo = Get-Item "nsis-3.08-setup.exe"
+          Write-Host "文件大小: $($fileInfo.Length) bytes"
+          if ($fileInfo.Length -lt 1000000) {
+            Write-Error "下载的文件太小，可能损坏"
+            exit 1
+          }
+        } else {
+          Write-Error "下载文件不存在"
+          exit 1
+        }
         
     - name: 安装 NSIS
       run: |
-        Start-Process -FilePath ".\nsis-3.08-setup.exe" -ArgumentList "/S" -NoNewWindow -Wait
+        Write-Host "正在安装 NSIS..."
+        try {
+          $process = Start-Process -FilePath ".\nsis-3.08-setup.exe" -ArgumentList "/S" -NoNewWindow -Wait -PassThru
+          if ($process.ExitCode -ne 0) {
+            Write-Error "NSIS 安装失败，退出代码: $($process.ExitCode)"
+            exit 1
+          }
+          Write-Host "NSIS 安装完成"
+        } catch {
+          Write-Error "安装过程出错: $_"
+          exit 1
+        }
         
     - name: 验证 NSIS 安装
       run: |
-        & "C:\Program Files (x86)\NSIS\makensis.exe" /VERSION
+        $nsisPath = "C:\Program Files (x86)\NSIS\makensis.exe"
+        if (Test-Path $nsisPath) {
+          Write-Host "NSIS 已安装到: $nsisPath"
+          & $nsisPath /VERSION
+        } else {
+          Write-Error "NSIS 安装验证失败，文件不存在: $nsisPath"
+          exit 1
+        }
         
     - name: 构建 NSIS 安装包
       run: |
