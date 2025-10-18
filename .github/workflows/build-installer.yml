@@ -61,10 +61,17 @@ jobs:
         Copy-Item "uninstall.bat" "zuiSuReader/"
         Copy-Item "手动安装说明.txt" "zuiSuReader/"
         
+    - name: 下载 NSIS
+      run: |
+        Invoke-WebRequest -Uri "https://sourceforge.net/projects/nsis/files/NSIS%203/3.08/nsis-3.08-setup.exe/download" -OutFile "nsis-3.08-setup.exe"
+        
     - name: 安装 NSIS
-      uses: nsis/setup-nsis@v1
-      with:
-        version: '3.08'
+      run: |
+        Start-Process -FilePath ".\nsis-3.08-setup.exe" -ArgumentList "/S" -NoNewWindow -Wait
+        
+    - name: 验证 NSIS 安装
+      run: |
+        & "C:\Program Files (x86)\NSIS\makensis.exe" /VERSION
         
     - name: 构建 NSIS 安装包
       run: |
