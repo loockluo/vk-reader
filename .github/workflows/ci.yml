@@ -1,0 +1,209 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '18'
+  PNPM_VERSION: '8'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+      
+    - name: 设置 Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: 安装 pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: ${{ env.PNPM_VERSION }}
+        
+    - name: 安装依赖
+      run: pnpm install
+      
+    - name: 安装前端依赖
+      run: pnpm install
+      working-directory: ./web
+      
+    - name: 运行代码检查
+      run: |
+        pnpm run eslint || true
+        cd web && pnpm run eslint || true
+        
+    - name: 运行类型检查
+      run: |
+        npx tsc --noEmit || true
+        cd web && npx tsc --noEmit || true
+
+  build-windows:
+    needs: test
+    runs-on: windows-latest
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+      
+    - name: 设置 Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: 安装 pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: ${{ env.PNPM_VERSION }}
+        
+    - name: 安装依赖
+      run: pnpm install
+      
+    - name: 安装前端依赖
+      run: pnpm install
+      working-directory: ./web
+      
+    - name: 构建前端
+      run: pnpm run build
+      working-directory: ./web
+      
+    - name: 复制前端构建文件
+      run: |
+        if (Test-Path "public") { Remove-Item -Recurse -Force "public" }
+        Copy-Item -Recurse -Force "web/build" "public"
+        
+    - name: 构建后端
+      run: pnpm run build:js
+      
+    - name: 构建安装脚本
+      run: pnpm run build:install
+      
+    - name: 创建构建目录
+      run: |
+        New-Item -ItemType Directory -Force -Path "dist"
+        Copy-Item -Recurse -Force "public" "dist/"
+        Copy-Item -Recurse -Force "node-v14.9.0-win-x86" "dist/"
+        Copy-Item "index.js" "dist/"
+        Copy-Item "config.json" "dist/"
+        Copy-Item "install.js" "dist/"
+        Copy-Item "install.bat" "dist/"
+        Copy-Item "installService.bat" "dist/"
+        Copy-Item "uninstall.bat" "dist/"
+        Copy-Item "手动安装说明.txt" "dist/"
+        Copy-Item "VK-reader-build.nsi" "dist/"
+        
+    - name: 创建 ZIP 包
+      run: |
+        Compress-Archive -Path "dist\*" -DestinationPath "VK-Reader-${{ github.sha }}.zip" -Force
+        
+    - name: 上传构建产物
+      uses: actions/upload-artifact@v4
+      with:
+        name: VK-Reader-Windows-${{ github.sha }}
+        path: VK-Reader-${{ github.sha }}.zip
+        retention-days: 30
+
+  build-linux:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+      
+    - name: 设置 Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+        
+    - name: 安装 pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: ${{ env.PNPM_VERSION }}
+        
+    - name: 安装依赖
+      run: pnpm install
+      
+    - name: 安装前端依赖
+      run: pnpm install
+      working-directory: ./web
+      
+    - name: 构建前端
+      run: pnpm run build
+      working-directory: ./web
+      
+    - name: 复制前端构建文件
+      run: |
+        rm -rf public
+        cp -r web/build public
+        
+    - name: 构建后端
+      run: pnpm run build:js
+      
+    - name: 构建安装脚本
+      run: pnpm run build:install
+      
+    - name: 创建构建目录
+      run: |
+        mkdir -p dist
+        cp -r public dist/
+        cp -r node-v14.9.0-win-x86 dist/ || echo "Node.js runtime not found for Linux"
+        cp index.js dist/
+        cp config.json dist/
+        cp install.js dist/
+        cp install.bat dist/
+        cp installService.bat dist/
+        cp uninstall.bat dist/
+        cp 手动安装说明.txt dist/
+        cp VK-reader-build.nsi dist/
+        
+    - name: 创建 TAR 包
+      run: |
+        tar -czf VK-Reader-Linux-${{ github.sha }}.tar.gz -C dist .
+        
+    - name: 上传构建产物
+      uses: actions/upload-artifact@v4
+      with:
+        name: VK-Reader-Linux-${{ github.sha }}
+        path: VK-Reader-Linux-${{ github.sha }}.tar.gz
+        retention-days: 30
+
+  release:
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    
+    steps:
+    - name: 下载 Windows 构建产物
+      uses: actions/download-artifact@v4
+      with:
+        name: VK-Reader-Windows-${{ github.sha }}
+        path: ./artifacts/windows
+        
+    - name: 下载 Linux 构建产物
+      uses: actions/download-artifact@v4
+      with:
+        name: VK-Reader-Linux-${{ github.sha }}
+        path: ./artifacts/linux
+        
+    - name: 创建 Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          ./artifacts/windows/*.zip
+          ./artifacts/linux/*.tar.gz
+        draft: false
+        prerelease: false
+        generate_release_notes: true

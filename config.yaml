@@ -1,0 +1,22 @@
+# 数据保存路径
+savePath: ./data
+# 日志等级
+logLevel: all
+# 定时，请使用Cron表达式生成器 https://www.matools.com/cron/
+cron: "*/5 * * * * *"
+# 请求对同一个IP，请求的最大并发数量
+limit: 2
+
+divices:
+  # 请求ip
+  - ip: 6d691e18.r17.cpolar.top
+    # 端口号
+    port: 80
+    # 设备编号
+    devId: 1
+  # - ip: 192.168.2.123
+  #   port: 80
+  #   devId: 2
+  # - ip: 192.168.2.123
+  #   port: 80
+  #   devId: 3

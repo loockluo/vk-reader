@@ -1,0 +1,12 @@
+/*
+ * Style in CSS Modules.
+ */
+
+.app {
+  width: 100vw;
+  height: 100vh;
+
+  ul {
+    justify-content: center
+  }
+}

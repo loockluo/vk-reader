@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--result为根节点，文件名为对照组的培养记录号-->
+<result>
+  <!--DevID为阅读器编号-->
+  <DevID>1</DevID>
+  <!--Control为对照组的根节点，里边的为对照组信息，通过result指令查询-->
+  <Control>
+    <!--Channel为对照组的通道号，对应result指令查询结果的Channel-->
+    <Channel>1</Channel>
+    <!--RecordNumber为对照组的培养记录号，对应result指令查询结果的RecordNumber-->
+    <RecordNumber>2023121214228</RecordNumber>
+    <!--SterilizerRecordNumber为对照组的灭菌记录号，对应result指令查询结果的SterilizerRecordNumber-->
+    <SterilizerRecordNumber>2</SterilizerRecordNumber>
+    <!--IndicatorBatch为对照组的灭菌批次号，对应result指令查询结果的IndicatorBatch-->
+    <IndicatorBatch>20231212-2-1</IndicatorBatch>
+    <!--state为对照组的培养结果，对应result指令查询结果的state-->
+    <state>+</state>
+    <!--ExcutTime为对照组的培养时间，对应result指令查询结果的StopTime-->
+    <ExcutTime>6</ExcutTime>
+    <!--BeginTime为对照组的培养开始时间，对应result指令查询结果的Date减去StopTime-->
+    <BeginTime>2023-12-12 14:19</BeginTime>
+    <!--EndTime为对照组的培养结束时间，对应result指令查询结果的Date-->
+    <EndTime>2023-12-12 14:25</EndTime>
+    <!--IndicatorNumber为对照组的指示剂编号，对应result指令查询结果的IndicatorNumber-->
+    <IndicatorNumber>20230816</IndicatorNumber>
+    <!--ChannelType为通道内的组别，1为对照组，0为灭菌组-->
+    <ChannelType>1</ChannelType>
+  </Control>
+  <Steri>
+    <!--Channel为灭菌组的通道号，对应result指令查询结果的Channel-->
+    <Channel>2</Channel>
+    <!--RecordNumber为灭菌组的培养记录号，对应result指令查询结果的RecordNumber-->
+    <RecordNumber>2023121214429</RecordNumber>
+    <!--SterilizerRecordNumber为灭菌组的灭菌记录号，对应result指令查询结果的SterilizerRecordNumber-->
+    <SterilizerRecordNumber>2</SterilizerRecordNumber>
+    <!--IndicatorBatch为灭菌组的灭菌批次号，对应result指令查询结果的IndicatorBatch-->
+    <IndicatorBatch>20231212-2-1</IndicatorBatch>
+    <!--state为灭菌组的培养结果，对应result指令查询结果的state-->
+    <state>-</state>
+    <!--ExcutTime为灭菌组的培养时间，对应result指令查询结果的StopTime-->
+    <ExcutTime>23</ExcutTime>
+    <!--BeginTime为灭菌组的培养开始时间，对应result指令查询结果的Date减去StopTime-->
+    <BeginTime>2023-12-12 14:20</BeginTime>
+    <!--EndTime为灭菌组的培养结束时间，对应result指令查询结果的Date-->
+    <EndTime>2023-12-12 14:43</EndTime>
+    <!--IndicatorNumber为灭菌组的指示剂编号，对应result指令查询结果的IndicatorNumber-->
+    <IndicatorNumber>20230816</IndicatorNumber>
+    <!--ChannelType为通道内的组别，1为对照组，0为灭菌组-->
+    <ChannelType>0</ChannelType>
+  </Steri>
+</result>
+

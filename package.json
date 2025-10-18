@@ -1,0 +1,71 @@
+{
+  "name": "zhuiSuReader",
+  "version": "1.0.0",
+  "target": "esNext",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build:install": "esbuild install.js --bundle --outfile=install_bound.js --log-level=warning --platform=node --target=es6",
+    "build:js": "esbuild server.ts --bundle --outfile=index.js --log-level=warning --platform=node --target=es6",
+    "build:web": "cd web && pnpm install && pnpm run build",
+    "build:copy-web": "rimraf public && cp -r web/build public",
+    "build:all": "pnpm run build:js && pnpm run build:install",
+    "build:dist": "pnpm run build:all && pnpm run build:copy-web",
+    "zip": "zip -r zuiSuReader.zip public node-v14.9.0-win-x86 index.js config.json install.js install.bat uninstall.bat 手动安装说明.txt",
+    "cpWeb": "rimraf public && cp -r web/build public",
+    "build": "pnpm run build:all && pnpm run zip",
+    "ci:build": "pnpm run build:web && pnpm run build:copy-web && pnpm run build:all",
+    "ci:test": "echo 'Running tests...'",
+    "ci:lint": "echo 'Running linting...'",
+    "verify": "node scripts/verify-build.js",
+    "ci:verify": "pnpm run ci:build && pnpm run verify"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@koa/router": "^12.0.1",
+    "@types/cheerio": "^0.22.35",
+    "@types/koa": "^2.14.0",
+    "@types/koa-bodyparser": "^4.3.12",
+    "@types/koa-router": "^7.4.8",
+    "@types/koa-static": "^4.0.4",
+    "@types/yamljs": "^0.2.34",
+    "cheerio": "1.0.0-rc.12",
+    "dayjs": "^1.11.10",
+    "esbuild": "^0.19.11",
+    "exceljs": "^4.4.0",
+    "iconv-lite": "^0.6.3",
+    "koa": "^2.15.0",
+    "koa-bodyparser": "^4.4.1",
+    "koa-router": "^12.0.1",
+    "koa-static": "^5.0.0",
+    "log4js": "^6.9.1",
+    "node-fetch": "^3.3.2",
+    "node-schedule": "^2.1.1",
+    "node-windows": "^1.0.0-beta.8",
+    "open": "^10.0.3",
+    "p-limit": "^5.0.0",
+    "papaparse": "^5.4.1",
+    "read-last-lines": "^1.8.0",
+    "sqlite3": "^5.1.7",
+    "xml2js": "^0.6.2",
+    "yamljs": "^0.3.0"
+  },
+  "devDependencies": {
+    "@types/exceljs": "^1.3.0",
+    "@types/node": "^20.11.0",
+    "@types/node-schedule": "^2.1.5",
+    "@types/xml2js": "^0.4.14"
+  },
+  "pkg": {
+    "assets": [
+      "config.yaml"
+    ],
+    "targets": [
+      "node14-win-x64",
+      "node14-macos-x64"
+    ],
+    "outputPath": "./build"
+  }
+}

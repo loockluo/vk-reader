@@ -1,0 +1,22 @@
+# GitHub Actions 环境配置文件
+# 用于统一管理不同工作流的环境变量和配置
+
+env:
+  # Node.js 配置
+  NODE_VERSION: '18'
+  PNPM_VERSION: '8'
+  
+  # 构建配置
+  BUILD_DIR: 'dist'
+  ARTIFACT_NAME: 'VK-Reader'
+  
+  # 发布配置
+  RELEASE_BRANCH: 'main'
+  DEV_BRANCH: 'develop'
+  
+  # 缓存配置
+  CACHE_KEY: 'node-modules-${{ hashFiles(\'**/pnpm-lock.yaml\') }}'
+  
+  # 构建产物保留时间（天）
+  ARTIFACT_RETENTION_DAYS: 30
+  DEV_ARTIFACT_RETENTION_DAYS: 7

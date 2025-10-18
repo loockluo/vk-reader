@@ -1,0 +1,98 @@
+name: 构建 NSIS 安装包
+
+on:
+  push:
+    branches: [ main ]
+  release:
+    types: [ published ]
+  workflow_dispatch:
+
+jobs:
+  build-installer:
+    runs-on: windows-latest
+    
+    steps:
+    - name: 检出代码
+      uses: actions/checkout@v4
+      
+    - name: 设置 Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: 安装 pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: '8'
+        
+    - name: 安装依赖
+      run: pnpm install
+      
+    - name: 安装前端依赖
+      run: pnpm install
+      working-directory: ./web
+      
+    - name: 构建前端
+      run: pnpm run build
+      working-directory: ./web
+      
+    - name: 复制前端构建文件
+      run: |
+        if (Test-Path "public") { Remove-Item -Recurse -Force "public" }
+        Copy-Item -Recurse -Force "web/build" "public"
+        
+    - name: 构建后端
+      run: pnpm run build:js
+      
+    - name: 构建安装脚本
+      run: pnpm run build:install
+      
+    - name: 创建 zuiSuReader 目录
+      run: |
+        New-Item -ItemType Directory -Force -Path "zuiSuReader"
+        Copy-Item -Recurse -Force "public" "zuiSuReader/"
+        Copy-Item -Recurse -Force "node-v14.9.0-win-x86" "zuiSuReader/"
+        Copy-Item "index.js" "zuiSuReader/"
+        Copy-Item "config.json" "zuiSuReader/"
+        Copy-Item "install.js" "zuiSuReader/"
+        Copy-Item "install.bat" "zuiSuReader/"
+        Copy-Item "installService.bat" "zuiSuReader/"
+        Copy-Item "uninstall.bat" "zuiSuReader/"
+        Copy-Item "手动安装说明.txt" "zuiSuReader/"
+        
+    - name: 安装 NSIS
+      uses: nsis/setup-nsis@v1
+      with:
+        version: '3.08'
+        
+    - name: 构建 NSIS 安装包
+      run: |
+        makensis VK-reader-build.nsi
+        
+    - name: 验证安装包
+      run: |
+        if (Test-Path "Setup.exe") {
+          Write-Host "安装包构建成功: Setup.exe"
+          $fileInfo = Get-Item "Setup.exe"
+          Write-Host "文件大小: $($fileInfo.Length) bytes"
+        } else {
+          Write-Error "安装包构建失败"
+          exit 1
+        }
+        
+    - name: 上传安装包
+      uses: actions/upload-artifact@v4
+      with:
+        name: VK-Reader-Installer-${{ github.sha }}
+        path: Setup.exe
+        retention-days: 30
+        
+    - name: 创建 Release
+      if: github.event_name == 'release'
+      uses: softprops/action-gh-release@v1
+      with:
+        files: Setup.exe
+        draft: false
+        prerelease: false
+        generate_release_notes: true
